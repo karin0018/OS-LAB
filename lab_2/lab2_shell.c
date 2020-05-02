@@ -42,7 +42,7 @@ int os_popen(const char* cmd, const char type){
     pid = fork();
     if(pid < 0){
         printf("Fork Failed!");
-        return 1;
+        return NULL;
     }
 
     /* 2. 子进程部分 */
@@ -67,7 +67,7 @@ int os_popen(const char* cmd, const char type){
             if(child_pid[i]>0)
                 close(i);
         /* 2.3 通过exec系统调用运行命令 */
-        execl sh -c cmd;
+        execl(SHELL,"sh","-c",cmd,(char*)NULL);
         /* 也可使用execlp execvp等 */
         _exit(127);
     }
@@ -121,7 +121,7 @@ int os_system(const char* cmdstring) {
     }
     /* 4.2 子进程部分 */
     else if (pid == 0){
-        execl sh -c cmd;
+        execl(SHELL,"sh","-c",cmdstring,(char*)NULL);
     }
 
     /* 4.3 父进程部分: 等待子进程运行结束 */
@@ -141,7 +141,7 @@ int parseCmd(char* cmdline, char cmds[MAX_CMD_NUM][MAX_CMD_LENGTH]) {
     int cmd_num = 0;
     char tmp[MAX_CMD_LENGTH];
     int len = NULL;
-    char *end = strchr(cmdline, ';');
+    char *end = strchr(cmdline, ';'); /*查找指定字符串中第一个匹配之处*/
     char *start = cmdline;
     while (end != NULL) {
         memcpy(cmds[cmd_num], start, end - start);
@@ -177,7 +177,7 @@ int main() {
         gets(cmdline);
         cmd_num = parseCmd(cmdline, cmds);
         for(i=0;i<cmd_num;i++){
-            char *div = strchr(cmds[i], '|');
+            char *div = strchr(cmds[i], '|'); /*一条命令里面包含管道*/
             if (div) {
                 /* 如果需要用到管道功能 */
                 char cmd1[MAX_CMD_LENGTH], cmd2[MAX_CMD_LENGTH];
@@ -190,15 +190,21 @@ int main() {
                 printf("cmd1: %s\n", cmd1);
                 printf("cmd2: %s\n", cmd2);
                 /* 5.1 运行cmd1，并将cmd1标准输出存入buf中 */
-
+                count = 4096;
+                zeroBuff(buf,count);
+                fd1 = os_popen(cmd1,'r');
+                write(fd1,buf,count);
+                status = os_pclose(fd1);
 
                 /* 5.2 运行cmd2，并将buf内容写入到cmd2输入中 */
-
+                fd2 = os_popen(cmd2,'w');
+                read(fd2,buf,count);
+                status = os_pclose(fd2);
 
             }
             else {
                 /* 6 一般命令的运行 */
-
+                status = os_system(cmds[i]);
             }
         }
     }

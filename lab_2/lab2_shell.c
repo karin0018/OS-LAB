@@ -73,7 +73,7 @@ int os_popen(const char* cmd, const char type){
     }
 
     /* 3. 父进程部分 */
-    else if(pid == 0) {
+    else {
         if (type == 'r') {
             close(pipe_fd[WRITE_END]);
             proc_fd = pipe_fd[READ_END];

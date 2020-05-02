@@ -48,18 +48,18 @@ int os_popen(const char* cmd, const char type){
     /* 2. 子进程部分 */
     else if (pid == 0){
         if (type == 'r') {
-            /* 2.1 关闭pipe无用的一端，将I/O输出发送到父进程 */
-            close(pipe_fd[WRITE_END]);
-            if (pipe_fd[READ_END] != STDOUT_FILENO) {
-                dup2(pipe_fd[READ_END], STDOUT_FILENO);
-                close(pipe_fd[READ_END]);
+            /* 2.1 关闭pipe无用的一端，将I/O输出发送到父进程 子进程写入*/
+            close(pipe_fd[READ_END]);
+            if (pipe_fd[WRITE_END] != STDOUT_FILENO) {
+                dup2(pipe_fd[WRITE_END], STDOUT_FILENO);
+                close(pipe_fd[WRITE_END]);
             }
         } else {
-            /* 2.2 关闭pipe无用的一端，接收父进程提供的I/O输入 */
-            close(pipe_fd[READ_END]);
-            if (pipe_fd[WRITE_END] != STDIN_FILENO) {
-                dup2(pipe_fd[WRITE_END], STDIN_FILENO);
-                close(pipe_fd[WRITE_END]);
+            /* 2.2 关闭pipe无用的一端，接收父进程提供的I/O输入 子进程read*/
+            close(pipe_fd[WRITE_END]);
+            if (pipe_fd[READ_END] != STDIN_FILENO) {
+                dup2(pipe_fd[READ_END], STDIN_FILENO);
+                close(pipe_fd[READ_END]);
             }
         }
         /* 关闭所有未关闭的子进程文件描述符（无需修改） */
@@ -193,12 +193,12 @@ int main() {
                 count = 4096;
                 zeroBuff(buf,count);
                 fd1 = os_popen(cmd1,'r');
-                write(fd1,buf,count);
+                read(fd1,buf,count);
                 status = os_pclose(fd1);
 
                 /* 5.2 运行cmd2，并将buf内容写入到cmd2输入中 */
                 fd2 = os_popen(cmd2,'w');
-                read(fd2,buf,count);
+                write(fd2,buf,count);
                 status = os_pclose(fd2);
 
             }
